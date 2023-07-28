@@ -11,4 +11,4 @@ app.use(express.json());
 app.use('/api/users', users);
 
 const port = process.env.PORT || 7777;
-app.listen(port, () => console.log(`Listening on port ${port}...`));
+app.listen(port, () => console.log(`Listening on port ${port}`));
