@@ -1,25 +1,28 @@
-const AccessToken = require("../models/AccessToken");
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
 
-exports.validateAccessToken = async (req, res, next) => {
+exports.validateJWT = async (req, res, next) => {
   try {
-    const accessToken = req.header('access_token');
-
-    if (!accessToken) {
-      return res.status(400).json({ error: 'Access token not provided' });
-    }
-
-    const token = await AccessToken.findOne({ access_token: accessToken });
+    const token = req.header('Authorization');
 
     if (!token) {
-      return res.status(400).json({ error: 'Invalid access token' });
+      return res.status(401).json({ error: 'Access token not provided' });
     }
 
-    if (token.expiry < new Date()) {
-      return res.status(400).json({ error: 'Expired access token' });
-    }
+    jwt.verify(token, 'your-secret-key', async (err, decoded) => {
+      if (err) {
+        return res.status(401).json({ error: 'Invalid access token' });
+      }
 
-    req.user = token.user_id;
-    next();
+      const user = await User.findById(decoded.user_id);
+
+      if (!user) {
+        return res.status(401).json({ error: 'User not found' });
+      }
+
+      req.user = user;
+      next();
+    });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
