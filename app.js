@@ -1,11 +1,12 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const userRoutes = require('./routes/userRoutes');
+require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-mongoose.connect('mongodb://127.0.0.1:27017/Test-I', {
+mongoose.connect(process.env.Connection_String, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })

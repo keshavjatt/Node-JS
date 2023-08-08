@@ -1,16 +1,16 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-
+require("dotenv").config();
 exports.validateJWT = async (req, res, next) => {
   try {
     const token = req.header('Authorization');
-
     if (!token) {
       return res.status(401).json({ error: 'Access token not provided' });
     }
 
-    jwt.verify(token, 'your-secret-key', async (err, decoded) => {
+    jwt.verify(token, process.env.JWT_SECRET_KEY, async (err, decoded) => {
       if (err) {
+       
         return res.status(401).json({ error: 'Invalid access token' });
       }
 
