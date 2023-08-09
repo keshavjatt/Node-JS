@@ -11,7 +11,7 @@ exports.validateJWT = async (req, res, next) => {
     jwt.verify(token, process.env.JWT_SECRET_KEY, async (err, decoded) => {
       if (err) {
        
-        return res.status(401).json({ error: 'Invalid access token' });
+        return res.status(401).json({ error: 'Invalid access token',error:err });
       }
 
       const user = await User.findById(decoded.user_id);

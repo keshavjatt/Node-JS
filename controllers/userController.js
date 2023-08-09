@@ -28,7 +28,7 @@ exports.generatePasswordResetToken = async (req, res) => {
       return res.status(400).json({ error: 'User not found' });
     }
 
-    const token = jwt.sign({ user_id: user._id }, 'your-secret-key', { expiresIn: '15m' });
+    const token = jwt.sign({ user_id: user._id }, process.env.JWT_SECRET_KEY, { expiresIn: '15m' });
 
     res.json({ message: 'Password reset token generated and sent to your email' });
   } catch (error) {
@@ -65,13 +65,9 @@ exports.verifyResetPasswordToken = async (req, res) => {
 
 exports.uploadProfileImage = async (req, res) => {
   try {
-    // Check if req.file exists (multer middleware should add this to the request)
     if (!req.file) {
       return res.status(400).json({ error: 'No image provided' });
     }
-
-    // You can process the uploaded image here
-    // For example, save it to a folder or upload it to a cloud storage service
 
     res.json({ message: 'Profile image uploaded successfully' });
   } catch (error) {
@@ -165,7 +161,6 @@ exports.loginUser = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
-
 
 exports.getUserData = (req, res) => {
 res.json(req.user);
