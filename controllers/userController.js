@@ -12,7 +12,7 @@ exports.deleteAddresses = async (req, res) => {
 
     await Address.deleteMany({ _id: { $in: addressIds } });
 
-    res.json({ message: 'Addresses deleted successfully' });
+    res.status(200).json({ message: 'Addresses deleted successfully' });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -30,7 +30,7 @@ exports.generatePasswordResetToken = async (req, res) => {
 
     const token = jwt.sign({ user_id: user._id }, process.env.JWT_SECRET_KEY, { expiresIn: '15m' });
 
-    res.json({ message: 'Password reset token generated and sent to your email' });
+    res.status(200).json({ message: 'Password reset token generated and sent to your email' });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -57,7 +57,7 @@ exports.verifyResetPasswordToken = async (req, res) => {
     user.password = hashedPassword;
     await user.save();
 
-    res.json({ message: 'Password reset successfully' });
+    res.status(200).json({ message: 'Password reset successfully' });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

@@ -11,10 +11,10 @@ mongoose.connect(process.env.Connection_String, {
   useUnifiedTopology: true,
 })
   .then(() => {
-    console.log('Connected to the database');
+    console.log("Connected to the database");
   })
   .catch((error) => {
-    console.error('Database connection error:', error);
+    console.error("Database connection error:", error);
   });
 
 app.use(express.json());
@@ -22,5 +22,5 @@ app.use(express.json());
 app.use('/user', userRoutes);
 
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log("Server is running on port ${PORT}");
 });
