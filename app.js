@@ -1,26 +1,14 @@
 const express = require('express');
-const mongoose = require('mongoose');
-const userRoutes = require('./routes/userRoutes');
-require("dotenv").config();
-
 const app = express();
-const PORT = process.env.PORT || 3000;
+const sequelize = require('./config/database');
+const routes = require('./routes/index');
 
-mongoose.connect(process.env.Connection_String, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-  .then(() => {
-    console.log("Connected to the database");
-  })
-  .catch((error) => {
-    console.error("Database connection error:", error);
-  });
+sequelize.sync().then(()=>{console.log('connected')}).catch(e=>{console.error(e)}); // Sync models with the database
 
 app.use(express.json());
+app.use('/api', routes);
 
-app.use('/user', userRoutes);
-
+const PORT = process.env.PORT || 4500;
 app.listen(PORT, () => {
-  console.log("Server is running on port ${PORT}");
+  console.log(`Server is running on port ${PORT}`);
 });
