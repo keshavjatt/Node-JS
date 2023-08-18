@@ -1,16 +1,20 @@
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const crypto = require('crypto');
 const AccessToken = require('../models/AccessToken');
+const Address = require("../models/Address");
+const jwt = require('jsonwebtoken');
 
-exports.registerUser = async (req, res) => {
+const createUser = async (req, res) => {
+  const { username, password,confirmPassword, email, firstname, lastname } = req.body;
+
   try {
-    const { username, password, email, firstname, lastname } = req.body;
-
+   const hashedPassword = await bcrypt.hash(password, 10);
+   
+    if(password !== confirmPassword)
+    return res.status(500).json({success:false, message:"Password didn't match"})
     
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    
-    const newUser = new User({
+    await User.create({
       username,
       password: hashedPassword,
       email,
@@ -18,57 +22,124 @@ exports.registerUser = async (req, res) => {
       lastname,
     });
 
-    await newUser.save();
-
-    res.status(201).json({ Message: "User registered successfully", Code :"201" });
+    return res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
-    res.status(400).json({ Message:"User already registered", Code :"400"});
+    console.error(error.toString())
+    return res.status(400).json({ error: 'Error registering user' });
   }
 };
 
-exports.loginUser = async (req, res) => {
-  try {
-    const { username, password } = req.body;
+const loginUser = async (req, res) => {
+  const { username, password } = req.body;
 
-    
-    const user = await User.findOne({ username });
+  try {
+    const user = await User.findOne({ where: { username } });
 
     if (!user) {
       return res.status(400).json({ error: 'User not found' });
     }
 
-    
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const passwordMatch = await bcrypt.compare(password, user.password);
 
-    if (!isPasswordValid) {
-      return res.status(400).json({ error: 'Invalid password' });
+    if (!passwordMatch) {
+      return res.status(400).json({ error: 'Invalid credentials' });
     }
 
-    
-    res.json({ access_token: user._id });
+    // Generate JWT token
+    const token = jwt.sign({ userId: user.id }, 'ABC', { expiresIn: '1h' });
+
+    return res.status(200).json({ data: { access_token: token }, message: 'Login successful' });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: 'Error during login' });
   }
-  
-  const accessToken = require('crypto').createHash('md5').update(Math.random().toString()).digest('hex');
-
-  
-  const expiry = new Date();
-  expiry.setHours(expiry.getHours() + 1);
-
-  
-  const newToken = new AccessToken({
-    user_id: user._id,
-    access_token: accessToken,
-    expiry: expiry,
-  });
-  await newToken.save();
-
-  res.json({ access_token: accessToken });
 };
 
+const getUserData = async (req, res) => {
+  const userId = req.user.id;
+  console.log(userId)
+  try {
+    const user = await User.findByPk(userId);
+    console.log(user)
+    if (!user) {
+      return res.status(400).json({ error: 'User not found' });
+    }
 
-
-exports.getUserData = (req, res) => {
-  res.json(req.user);
+    return res.status(200).json({ data: user, message: 'User data retrieved successfully' });
+  } catch (error) {
+    return res.status(400).json({ error: 'Error retrieving user data' });
+  }
 };
+
+const deleteUserData = async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const user = await User.findByPk(userId);
+
+    if (!user) {
+      return res.status(400).json({ error: 'User not found' });
+    }
+
+    await user.destroy();
+    return res.status(200).json({ message: 'User deleted' });
+  } catch (error) {
+    return res.status(400).json({ error: 'Error deleting user' });
+  }
+};
+
+const getUserList = async (req, res) => {
+  const page = parseInt(req.params.page);
+  const pageSize = 1;
+  const offset = (page - 1) * pageSize;
+
+  try {
+    const users = await User.findAll({
+      limit: pageSize,
+      offset: offset,
+    });
+
+    return res.status(200).json({ data: users, message: 'User list retrieved successfully' });
+  } catch (error) {
+    return res.status(400).json({ error: 'Error retrieving user list' });
+  }
+};
+
+const addAddress = async (req, res) => {
+  const { address, city, state, pin_code, phone_no } = req.body;
+  const userId = req.user.id;
+  try {
+    
+    await Address.create({
+      user_id: userId,
+      address,
+      city,
+      state,
+      pin_code,
+      phone_no,
+    });
+
+    return res.status(201).json({ message: 'Address added successfully' });
+  } catch (error) {
+    return res.status(400).json({ error: 'Error adding address',err:error });
+  }
+};
+
+const getUserWithAddresses = async (req, res) => {
+  const userId = req.params.id;
+
+  try {
+    const user = await User.findOne({
+      where: { id: userId },
+      include: [Address],
+    });
+
+    if (!user) {
+      return res.status(400).json({ error: 'User not found' });
+    }
+
+    return res.status(200).json({ data: user, message: 'User data retrieved successfully' });
+  } catch (error) {
+    return res.status(400).json({ error: 'Error retrieving user data' });
+  }
+};
+module.exports = { createUser, loginUser, getUserData,deleteUserData, getUserList, addAddress, getUserWithAddresses };
