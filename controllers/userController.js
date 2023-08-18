@@ -2,6 +2,8 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const crypto = require('crypto');
 const AccessToken = require('../models/AccessToken');
+const Address = require("../models/Address");
+const jwt = require('jsonwebtoken');
 
 const createUser = async (req, res) => {
   const { username, password,confirmPassword, email, firstname, lastname } = req.body;
@@ -43,25 +45,16 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
 
-    // Generate access token
-    const accessToken = crypto.createHash('md5').update(username + Date.now().toString()).digest('hex');
-    const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour expiry
+    // Generate JWT token
+    const token = jwt.sign({ userId: user.id }, 'ABC', { expiresIn: '1h' });
 
-    
-    await AccessToken.create({
-      user_id: user.id,
-      access_token: accessToken,
-      expiry,
-    });
-
-    return res.status(200).json({ data: { access_token: accessToken }, message: 'Login successful' });
+    return res.status(200).json({ data: { access_token: token }, message: 'Login successful' });
   } catch (error) {
     return res.status(400).json({ error: 'Error during login' });
   }
 };
 
 const getUserData = async (req, res) => {
-  console.log("abcd")
   const userId = req.user.id;
   console.log(userId)
   try {
@@ -96,7 +89,7 @@ const deleteUserData = async (req, res) => {
 
 const getUserList = async (req, res) => {
   const page = parseInt(req.params.page);
-  const pageSize = 10;
+  const pageSize = 1;
   const offset = (page - 1) * pageSize;
 
   try {
@@ -114,7 +107,6 @@ const getUserList = async (req, res) => {
 const addAddress = async (req, res) => {
   const { address, city, state, pin_code, phone_no } = req.body;
   const userId = req.user.id;
-
   try {
     
     await Address.create({
@@ -128,7 +120,7 @@ const addAddress = async (req, res) => {
 
     return res.status(201).json({ message: 'Address added successfully' });
   } catch (error) {
-    return res.status(400).json({ error: 'Error adding address' });
+    return res.status(400).json({ error: 'Error adding address',err:error });
   }
 };
 

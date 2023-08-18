@@ -3,6 +3,7 @@ const { body } = require('express-validator');
 const validate = require('../middleware/validationMiddleware');
 const verifyAccessToken = require('../middleware/accessMiddleware');
 const userController = require('../controllers/userController');
+const { DataTypes } = require('sequelize');
 
 const router = express.Router();
 
