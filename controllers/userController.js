@@ -1,5 +1,7 @@
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const crypto = require('crypto');
+const AccessToken = require('../models/AccessToken');
 
 const createUser = async (req, res) => {
   const { username, password,confirmPassword, email, firstname, lastname } = req.body;
@@ -9,7 +11,7 @@ const createUser = async (req, res) => {
    
     if(password !== confirmPassword)
     return res.status(500).json({success:false, message:"Password didn't match"})
-    // Create the user
+    
     await User.create({
       username,
       password: hashedPassword,
@@ -41,7 +43,18 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
 
-    return res.status(200).json({ data: { access_token: user.id }, message: 'Login successful' });
+    // Generate access token
+    const accessToken = crypto.createHash('md5').update(username + Date.now().toString()).digest('hex');
+    const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour expiry
+
+    
+    await AccessToken.create({
+      user_id: user.id,
+      access_token: accessToken,
+      expiry,
+    });
+
+    return res.status(200).json({ data: { access_token: accessToken }, message: 'Login successful' });
   } catch (error) {
     return res.status(400).json({ error: 'Error during login' });
   }
@@ -98,4 +111,43 @@ const getUserList = async (req, res) => {
   }
 };
 
-module.exports = { createUser, loginUser, getUserData,deleteUserData, getUserList };
+const addAddress = async (req, res) => {
+  const { address, city, state, pin_code, phone_no } = req.body;
+  const userId = req.user.id;
+
+  try {
+    
+    await Address.create({
+      user_id: userId,
+      address,
+      city,
+      state,
+      pin_code,
+      phone_no,
+    });
+
+    return res.status(201).json({ message: 'Address added successfully' });
+  } catch (error) {
+    return res.status(400).json({ error: 'Error adding address' });
+  }
+};
+
+const getUserWithAddresses = async (req, res) => {
+  const userId = req.params.id;
+
+  try {
+    const user = await User.findOne({
+      where: { id: userId },
+      include: [Address],
+    });
+
+    if (!user) {
+      return res.status(400).json({ error: 'User not found' });
+    }
+
+    return res.status(200).json({ data: user, message: 'User data retrieved successfully' });
+  } catch (error) {
+    return res.status(400).json({ error: 'Error retrieving user data' });
+  }
+};
+module.exports = { createUser, loginUser, getUserData,deleteUserData, getUserList, addAddress, getUserWithAddresses };

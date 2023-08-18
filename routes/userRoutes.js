@@ -52,4 +52,24 @@ router.get(
   userController.getUserList
 );
 
+router.post(
+  '/address',
+  verifyAccessToken,
+  [
+    body('address').notEmpty(),
+    body('city').notEmpty(),
+    body('state').notEmpty(),
+    body('pin_code').notEmpty(),
+    body('phone_no').notEmpty(),
+    validate,
+  ],
+  userController.addAddress
+);
+
+router.get(
+  '/get/:id',
+  verifyAccessToken,
+  userController.getUserWithAddresses
+);
+
 module.exports = router;
