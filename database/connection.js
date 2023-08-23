@@ -1,7 +1,7 @@
 const { Sequelize } = require('sequelize');
 
-const sequelize = new Sequelize('node-js', 'root', 'Keshav@123#abc', {
-  host: '127.0.01',
+const sequelize = new Sequelize(process.env.DB_NAME, process.env.MySQL_USERNAME, process.env.MySQL_PASSWORD, {
+  host: process.env.MySQL_IP,
   dialect: 'mysql',
 });
 

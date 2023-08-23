@@ -4,6 +4,18 @@ const validate = require('../middleware/validationMiddleware');
 const verifyAccessToken = require('../middleware/accessMiddleware');
 const userController = require('../controllers/userController');
 const { DataTypes } = require('sequelize');
+const multer = require('multer');
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/') // Set your destination folder
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + '-' + file.originalname)
+  }
+});
+
+const upload = multer({ storage: storage });
 
 const router = express.Router();
 
@@ -71,6 +83,47 @@ router.get(
   '/get/:id',
   verifyAccessToken,
   userController.getUserWithAddresses
+);
+
+router.delete(
+  '/address',
+  verifyAccessToken,
+  [
+    body('addressIds').isArray({ min: 1 }),
+    validate,
+  ],
+  userController.deleteAddresses
+);
+
+router.post(
+  '/forgot-password',
+  [
+    body('email').isEmail(),
+    validate,
+  ],
+  userController.forgotPassword
+);
+
+router.put(
+  '/verify-reset-password/:ResetToken',
+  [
+    body('password').notEmpty(),
+    body('confirmPassword').custom((value, { req }) => {
+      if (value !== req.body.password) {
+        throw new Error('Password confirmation does not match password');
+      }
+      return true;
+    }),
+    validate,
+  ],
+  userController.verifyResetPassword
+);
+
+router.put(
+  '/profile-image',
+  verifyAccessToken,
+  upload.single('profileImage'),
+  userController.uploadProfileImage
 );
 
 module.exports = router;
